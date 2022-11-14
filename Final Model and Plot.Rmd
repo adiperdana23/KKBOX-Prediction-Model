@@ -101,7 +101,7 @@ forest_dataviz_ggplot <-ggplot(forest_viz_ggplot, aes(fill=condition, y=listenin
 ggplotly(forest_dataviz_ggplot, tooltip = "text")
 ```
 
-For Loyalty and churn
+Data Visualization Loyalty and churn
 ```{r}
 forest_loyalty_scattter_tooltip <-ggplot(forest_viz_loyality, aes( x=loyality_range, y=churn,text=paste0("years :" ,loyality_range,"<br>",
         "number of churn: ", scales::comma(churn, 1),"<br>",
@@ -119,7 +119,7 @@ forest_loyalty_scattter_tooltip <-ggplot(forest_viz_loyality, aes( x=loyality_ra
 ```{r}
 ggplotly(forest_loyalty_scattter_tooltip, tooltip = "text")
 ```
-
+Data Visualization to show the growth of subscriber
 ```{r pressure, echo=FALSE}
 # registration plot
 wsdm_for_registration_plot <- wsdm_for_registration  %>%
@@ -133,7 +133,7 @@ wsdm_for_registration_plot <- wsdm_for_registration  %>%
     theme_ipsum()
 ```
 
-
+Data Visualization to show the number of customer who use auto_renew features
 ```{r pressure, echo=FALSE}
 # Auto renew plot
 auto_renew_plot <-ggplot(forest_viz_auto_renew_plot, aes(fill=`churn or not`, y=`has auto renew feature?`, x=`number of subscriber`,text=paste0( "Churn or stay: ", `churn or not`, "<br>",
@@ -195,7 +195,7 @@ forest_model_evalmat_lr <-wsdm_forest_pred_lr %>%
     precision = precision_vec(is_churn, churn_pred)
   )
 ```
-
+Variable importance Random forest 
 ```{r}
 varmp_lr_dv <- ggplot(varmp_lr_plot, aes(x =`mean decrease gini` ,y = reorder(variable, `mean decrease gini`))) +
   geom_col(aes(fill = `mean decrease gini`), show.legend = F) +
@@ -207,7 +207,7 @@ varmp_lr_dv <- ggplot(varmp_lr_plot, aes(x =`mean decrease gini` ,y = reorder(va
   scale_fill_gradient(low = "gray", high = "blue") +
   theme_minimal()
 ```
-
+Variable importance Random forest with tooltip
 ```{r}
 varimp_forest_plotly <-ggplot(data_viz_varmp, aes(x = `mean decrease gini`, y = reorder(variable, `mean decrease gini`))) +
   geom_col(aes(fill = `mean decrease gini`, text = tooltip)) +
@@ -225,11 +225,7 @@ varimp_forest_plotly <-ggplot(data_viz_varmp, aes(x = `mean decrease gini`, y = 
 ggplotly(varimp_forest_plotly, tooltip = "text")
 ```
 
-The power of the random forest algorithm shows itself when you build predictive models for data with many features and records. It has the ability to automatically determine which predictors are important and discover complex relationships between predictors corresponding to interaction terms 
 
-
-
-Variable importance Random forest
 
 
 
