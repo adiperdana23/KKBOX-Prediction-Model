@@ -164,39 +164,7 @@ tabPanel(title=h3("| Variable Importance"),
   
 )
 
-# navbarpage close
-                                   
-                                 
-            
-                     
-                     
-                     
-                     
-                     
-                     
-                     
-                     
-                          
-                          
-                          
-                          
-                          
-                          
-                 
-                 
-                 
-                 
-                 
-                 
-                 
-                 
-                 
-                 
-                                       
-                          
-
-
-# Define server logic required to draw a histogram
+# Define server logic required to draw a plot
 server <- function(input, output) {
 
     output$home_img <- renderImage({
@@ -206,7 +174,7 @@ server <- function(input, output) {
            height = "700")
     },deleteFile =F)
     
-    
+    # relationship between churn and listening hour
     output$listen_plot <- renderPlotly({ggplot(forest_viz_ggplot, aes(fill=condition, y=listening_hour, x=value,text=paste0( "Churn or stay: ", condition, "<br>",
                                                                                                                              "number of subscriber: ", scales::comma(value, 1), "<br>"))) + 
         geom_bar(position="stack", stat="identity") +
@@ -223,7 +191,7 @@ server <- function(input, output) {
       
       
     })
-    
+    # Relationship loyality and churn
     output$loyality_plot <- renderPlotly({ggplot(forest_viz_loyality, aes( x=loyality_range, y=churn,text=paste0("years :" ,loyality_range,"<br>",
                                                                                                                  "number of churn: ", scales::comma(churn, 1),"<br>",
                                                                                                                  "number of stay: ", scales::comma(stay, 1)))) + 
@@ -241,7 +209,7 @@ server <- function(input, output) {
       
       
       
-      
+     # KKBOX's Subscriber Growth
     })
   output$growth_plot <- renderPlot({wsdm_for_registration  %>%
       head(14) %>%
@@ -252,7 +220,7 @@ server <- function(input, output) {
       ggtitle("Subscriber Growth year to year") +
       ylab("number of subscriber") +
       theme_ipsum()})
-  
+  # Relationship Auto renew features and Churn
   output$renew_plot <-renderPlotly({ggplot(forest_viz_auto_renew_plot, aes(fill=`churn or not`, y=`has auto renew feature?`, x=`number of subscriber`,text=paste0( "Churn or stay: ", `churn or not`, "<br>",
                                                                                                                                                                    "number of subscriber: ", scales::comma(`number of subscriber`, 1), "<br>"))) + 
       geom_bar(position="stack", stat="identity") +
@@ -264,7 +232,7 @@ server <- function(input, output) {
            title = 'Number of churned customer by auto renew feature')+
       theme_algoritma
     ggplotly(auto_renew_plot, tooltip = "text")})
-  
+  # Variable Importance Random Forest
   output$varimp_forest <-renderPlotly({ggplot(data_viz_varmp, aes(x = `mean decrease gini`, y = reorder(variable, `mean decrease gini`))) +
       geom_col(aes(fill = `mean decrease gini`, text = tooltip)) +
       scale_fill_continuous(low = "gray", high = "blue") +
