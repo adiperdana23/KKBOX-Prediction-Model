@@ -41,7 +41,7 @@ library(rpart.plot)
 
 library(tidyverse)
 library(plotly)
-library(shiny)
+#library(shiny)
 library(dplyr)
 library(rsample)
 library(caret)
@@ -58,6 +58,15 @@ library(e1071)
 # GLOBAL
 # Model Dataset
 ## Load the dataset for model
+
+# For Listening hour
+forest_viz_ggplot <- readRDS("forest_viz_ggplot.RDS")
+# For Registration line plot
+wsdm_for_registration <- readRDS("wsdm_for_registration.RDS")
+# For auto renew and loyalty
+forest_viz <- readRDS("forest_viz.RDS")
+# For Model
+forest_model_lr <-readRDS("forest_model_lr.RDS")
 
 wsdm_for_registration_app <-wsdm_for_registration %>% 
   head(14) %>% 
@@ -107,6 +116,8 @@ forest_viz_ggplot <-forest_viz_plot_lh
 forest_viz_ggplot <- forest_viz_ggplot %>% 
   pivot_longer(-listening_hour,names_to = "condition",names_transform = list(condition =as.factor))
 
+colnames(rfpred) [1] = "stay_prob"
+colnames(rfpred) [2] = "churn_prob"
 # Random Forest Model
 
 forest_model_lr <-readRDS("forest_model_lr.RDS")
@@ -122,14 +133,7 @@ forest_test_lr$is_auto_renew <- as.factor(forest_test_lr$is_auto_renew)
 forest_test_lr$unq_track <- round(forest_test_lr$unq_track,0)
 forest_test_lr$unq_track <- round(forest_test_lr$unq_track,0)
 forest_test_lr$num_100_perday <- round(forest_test_lr$num_100_perday,0)
-# For Listening hour
-forest_viz_ggplot <- readRDS("forest_viz_ggplot.RDS")
-# For Registration line plot
-wsdm_for_registration <- readRDS("wsdm_for_registration.RDS")
-# For auto renew and loyalty
-forest_viz <- readRDS("forest_viz.RDS")
-# For Model
-forest_model_lr <-readRDS("forest_model_lr.RDS")
+
 
 
 # Variable Importance Random Forest 
@@ -239,7 +243,7 @@ ui <- navbarPage(h3("KKBOX Online Music Streaming Churn Dashboard"),
                  tabPanel(title=h3("| Churn Prediction"),
                          sidebarPanel(fluidRow(box(width = 6,
                                        h1("Variable input"))),
-                          fluidRow(box(width = 8,
+                          fluidRow(box(width = 6,
                                        selectInput(inputId = "automaticsubscription",
                                                    label = "Has auto subscription feature?",
                                                    choices =   (forest_test_lr$is_auto_renew)),
@@ -252,7 +256,7 @@ ui <- navbarPage(h3("KKBOX Online Music Streaming Churn Dashboard"),
                                                               max = max(forest_test_lr$listening_hour),
                                                               value = min(forest_test_lr$listening_hour),
                                                               step = 200)),
-                                   box(width = 8,
+                                   box(width = 6,
                                        sliderInput(inputId = "slideloyal",
                                                    label = "How loyal are the subscriber?",
                                                    min = min(forest_test_lr$loyality_range),
@@ -270,7 +274,10 @@ ui <- navbarPage(h3("KKBOX Online Music Streaming Churn Dashboard"),
                                                    min = min(forest_test_lr$num_100_perday),
                                                    max = max(forest_test_lr$num_100_perday),
                                                    value = min(forest_test_lr$num_100_perday),
-                                                   step = 5)
+                                                   step = 5),
+                                       actionButton("go", "Predict!",icon("paper-plane"),
+                                                    style="color: #fff; background-color: #337ab7; border-color: #2e6da4")
+                                       
                                        
                                      
                                      
@@ -294,19 +301,22 @@ ui <- navbarPage(h3("KKBOX Online Music Streaming Churn Dashboard"),
                           
                  ),
                  mainPanel(
-                   fluidRow(box(width = 4,
-                                actionButton("go", "Predict!", 
-                                             style="display:inline-block;width:100%;text-align: center; font-size: 20px"),
-                                br(),br(),
-                                h2("Churn Probablity", style="display:inline-block;width:100%;text-align: center;font-size: 20px"),
-                                tags$style(type='text/css', '#value {color: blue;font-size: 20px;text-align: center}'),
-                                verbatimTextOutput("prediction")
+                   fluidRow( box(width = 6,
+                              infoBoxOutput("prediction")),
+                              box(width = 6,
+                                  infoBoxOutput("class")))
+                                
+                                
+                            
+                            
+                    
+                                
                      
                      
                      
                      
                      
-                   ))
+                   
                    
                    
                    
@@ -314,12 +324,12 @@ ui <- navbarPage(h3("KKBOX Online Music Streaming Churn Dashboard"),
                  
                  
                  
-                 )
+                 ))
                  
                  
                  
                  
-)
+
 
 # navbarpage close
 
@@ -396,6 +406,11 @@ server <- function(input, output) {
     
   })
   output$growth_plot <- renderPlot({
+    
+    wsdm_for_registration_app <-wsdm_for_registration %>% 
+      head(14) %>% 
+      select(-tooltip)
+    
       ggplot( wsdm_for_registration_app,aes(x=year_registration, y=`number of subscriber`)) +
       geom_line(color="#69b3a2") +
       geom_point(color="#69b3a2", size=4) +
@@ -420,46 +435,91 @@ server <- function(input, output) {
     ggplotly(auto_renew_plot, tooltip = "text")})
   
   
-  output$prediction <- renderText({
+  output$prediction <- renderInfoBox({
+    
     if(input$go >0) {
     rfpred <- predict(forest_model_lr ,
                       prd_df = data.frame(
-      plan_list_price = "149",
-      actual_amount_paid = "149",
-      is_auto_renew = as.factor(input$automaticsubscription),
-      year_registration = 2005,
-      sum_num_25 = 90,
-      sum_num_50 = 45,
-      sum_num_75 = 30,
-      sum_num_985 =0,
-      sum_num_100 = 2535,
-      num_unq_sum = 2595,
-      plan_list_price_mean = 139.06667,
-      actual_amount_paid_mean = 149,
-      avg_time_perday= 858.356563,
-      unq_track = input$unq_track,
-      num_25_perday = 0.113924051,
-      num_50_perday = 0.056962025,
-      num_75_perday = 0.037974684,
-      num_985_perday = 0,
-      num_25_perday = 0.113924051,
-      num_50_perday= 0.056962025,
-      num_75_perday = 0.037974684,
-      num_985_perday = 0,
-      num_100_perday = as.numeric(input$slide100),
-      loyality_range  = as.numeric(input$slideloyal),
-      price_day = 4.966667,
-      price_range = as.factor(input$pricerange),
-      listening_hour = as.numeric(input$slidelisten)),
+                        plan_list_price = max(forest_test_lr$plan_list_price),
+                        actual_amount_paid = max(forest_test_lr$actual_amount_paid),
+                        is_auto_renew = as.factor(input$automaticsubscription),
+                        year_registration = max(forest_test_lr$year_registration),
+                        sum_num_25 =mean(forest_test_lr$sum_num_25),
+                        sum_num_50 = mean(forest_test_lr$sum_num_50),
+                        sum_num_75 = mean(forest_test_lr$sum_num_75),
+                        sum_num_985 = mean(forest_test_lr$sum_num_985),
+                        sum_num_100 = mean(forest_test_lr$sum_num_100),
+                        num_unq_sum = mean(forest_test_lr$num_unq_sum),
+                        plan_list_price_mean = mean(forest_test_lr$plan_list_price_mean),
+                        actual_amount_paid_mean = mean(forest_test_lr$actual_amount_paid),
+                        avg_time_perday= mean(forest_test_lr$avg_time_perday),
+                        unq_track = input$slideuniquetrack,
+                        num_25_perday = mean(forest_test_lr$num_25_perday),
+                        num_50_perday = mean(forest_test_lr$num_50_perday),
+                        num_75_perday = mean(forest_test_lr$num_75_perday),
+                        num_985_perday = mean(forest_test_lr$num_985_perday),
+                        num_100_perday = as.numeric(input$slide100),
+                        loyality_range  = as.factor(input$slideloyal),
+                        price_day =  mean(forest_test_lr$price_day),
+                        price_range = as.factor(input$pricerange),
+                        listening_hour = as.numeric(input$slidelisten)                 
+      ),
       type = "prob") }
-      
-    churn_prediction <- rfpred[1]
-    paste(churn_prediction*100,"%")
+    rf_factor <- as.data.frame(rfpred)
     
-  
+      
+    infoBox(
+      "Probability Churn", paste0(rf_factor$churn_prob*100, "%"), icon = icon("list"),
+      color = "blue", fill = TRUE
+    )
+    
+ 
     
     
   })
+  
+  
+  output$class <- renderInfoBox({
+    
+    if(input$go >0) {
+      rfpred <- predict(forest_model_lr ,
+                        prd_df = data.frame(
+                          plan_list_price = max(forest_test_lr$plan_list_price),
+                          actual_amount_paid = max(forest_test_lr$actual_amount_paid),
+                          is_auto_renew = as.factor(input$automaticsubscription),
+                          year_registration = max(forest_test_lr$year_registration),
+                          sum_num_25 =mean(forest_test_lr$sum_num_25),
+                          sum_num_50 = mean(forest_test_lr$sum_num_50),
+                          sum_num_75 = mean(forest_test_lr$sum_num_75),
+                          sum_num_985 = mean(forest_test_lr$sum_num_985),
+                          sum_num_100 = mean(forest_test_lr$sum_num_100),
+                          num_unq_sum = mean(forest_test_lr$num_unq_sum),
+                          plan_list_price_mean = mean(forest_test_lr$plan_list_price_mean),
+                          actual_amount_paid_mean = mean(forest_test_lr$actual_amount_paid),
+                          avg_time_perday= mean(forest_test_lr$avg_time_perday),
+                          unq_track = input$slideuniquetrack,
+                          num_25_perday = mean(forest_test_lr$num_25_perday),
+                          num_50_perday = mean(forest_test_lr$num_50_perday),
+                          num_75_perday = mean(forest_test_lr$num_75_perday),
+                          num_985_perday = mean(forest_test_lr$num_985_perday),
+                          num_100_perday = as.numeric(input$slide100),
+                          loyality_range  = as.factor(input$slideloyal),
+                          price_day =  mean(forest_test_lr$price_day),
+                          price_range = as.factor(input$pricerange),
+                          listening_hour = as.numeric(input$slidelisten)                 
+                        ),
+                        type = "prob") }
+    
+    infoBox(
+      "Probability stay", paste0(rfpred[1]*100, "%"), icon = icon("list"),
+      color = "blue", fill = TRUE
+    )
+    
+    
+    
+    
+  })
+  
   
 
 }
