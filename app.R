@@ -41,7 +41,7 @@ library(rpart.plot)
 
 library(tidyverse)
 library(plotly)
-#library(shiny)
+library(shiny)
 library(dplyr)
 library(rsample)
 library(caret)
@@ -115,9 +115,12 @@ forest_viz_ggplot <-forest_viz_plot_lh
 
 forest_viz_ggplot <- forest_viz_ggplot %>% 
   pivot_longer(-listening_hour,names_to = "condition",names_transform = list(condition =as.factor))
-
 colnames(rfpred) [1] = "stay_prob"
 colnames(rfpred) [2] = "churn_prob"
+rfpreddf <- as.data.frame(rfpred)
+
+rfpreddf$churn_prob <- as.character(rfpreddf$churn_prob)
+rfpreddf$stay_prob <- as.character(rfpreddf$stay_prob)
 # Random Forest Model
 
 forest_model_lr <-readRDS("forest_model_lr.RDS")
@@ -286,25 +289,17 @@ ui <- navbarPage(h3("KKBOX Online Music Streaming Churn Dashboard"),
                                     
                                    )
                                  )
-  
-                          
-                            
-                          
-                            
-                            
-                            
-                          
-                          
-                          
-                          
-   
                           
                  ),
                  mainPanel(
                    fluidRow( box(width = 6,
                               infoBoxOutput("prediction")),
                               box(width = 6,
-                                  infoBoxOutput("class")))
+                                  infoBoxOutput("class"))))))
+                 
+                 
+                 
+                 
                                 
                                 
                             
@@ -320,11 +315,7 @@ ui <- navbarPage(h3("KKBOX Online Music Streaming Churn Dashboard"),
                    
                    
                    
-                 )
-                 
-                 
-                 
-                 ))
+              
                  
                  
                  
@@ -465,19 +456,14 @@ server <- function(input, output) {
                         listening_hour = as.numeric(input$slidelisten)                 
       ),
       type = "prob") }
-    rf_factor <- as.data.frame(rfpred)
-    
+    rfpreddf <- as.data.frame(rfpred)
       
     infoBox(
-      "Probability Churn", paste0(rf_factor$churn_prob*100, "%"), icon = icon("list"),
+      "Probability Churn", paste0(rfpreddf$churn_prob, "%"), icon = icon("list"),
       color = "blue", fill = TRUE
-    )
-    
- 
-    
-    
-  })
+    )})
   
+  head(rfpreddf)
   
   output$class <- renderInfoBox({
     
@@ -508,21 +494,21 @@ server <- function(input, output) {
                           price_range = as.factor(input$pricerange),
                           listening_hour = as.numeric(input$slidelisten)                 
                         ),
-                        type = "prob") }
-    
+                        type = "prob") } 
+    rfpreddf <- as.data.frame(rfpred)
     infoBox(
-      "Probability stay", paste0(rfpred[1]*100, "%"), icon = icon("list"),
+      "Probability stay", paste0(rfpreddf$stay_prob, "%"), icon = icon("list"),
       color = "blue", fill = TRUE
-    )
+    )})}
     
     
     
     
-  })
+  
   
   
 
-}
+
 
 
 
